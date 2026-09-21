@@ -69,13 +69,20 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"💰 خاڵەکانت: {points}"
     )
 
+app_web = Flask(__name__)
 
+@app_web.route("/")
+def home():
+    return "Bot is running!"
+
+def run_web():
+    app_web.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
 def main():
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("balance", balance))
-
+    threading.Thread(target=run_web, daemon=True).start()
     app.run_polling()
 
 
