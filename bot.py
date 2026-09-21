@@ -20,41 +20,45 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     args = context.args
 
-    cur = db.execute("SELECT user_id FROM users WHERE user_id=?", (user.id,))
-    exists = cur.fetchone()
+    invited_by = None
+    if args and args[0].isdigit():
+        invited_by = int(args[0])
+        if invited_by == user.id:
+            invited_by = None
 
-    if not exists:
-        inviter = None
-
-        if args and args[0].isdigit():
-            inviter = int(args[0])
-            if inviter != user.id:
-                db.execute(
-                    "UPDATE users SET points = points + 150 WHERE user_id=?",
-                    (inviter,)
-                )
-
-        db.execute(
+    cur = db.cursor()
+    cur.execute("SELECT user_id FROM users WHERE user_id = ?", (user.id,))
+    
+    if cur.fetchone() is None:
+        cur.execute(
             "INSERT INTO users (user_id, points, invited_by) VALUES (?, ?, ?)",
-            (user.id, 0, inviter)
+            (user.id, 0, invited_by)
         )
+
+        if invited_by:
+            cur.execute(
+                "UPDATE users SET points = points + 150 WHERE user_id = ?",
+                (invited_by,)
+            )
+
         db.commit()
 
-    link = f"https://t.me/{context.bot.username}?start={user.id}"
-
     await update.message.reply_text(
-        f"👋 بەخێربێیت {user.first_name}!\n\n"
-        f"🪙 بۆ بینینی خاڵەکانت:\n/balance\n\n"
-        f"🔗 لینکی بانگهێشتکردنت:\n{link}\n\n"
-        f"👥 هەر کەسێک بە لینکی تۆ بێت، 150 خاڵ بۆ تۆ زیاد دەبێت."
+        "سڵاو 👋\n\n"
+        "بەخێربێیت بۆ Member Bot 🤖\n\n"
+        "👤 بۆ بانگهێشتکردنی کەسانی تر:\n"
+        "لینکی بانگهێشت بەکاربهێنە.\n\n"
+        "💰 بۆ بینینی خاڵەکانت:\n"
+        "/balance"
     )
 
 
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
-    cur = db.execute(
-        "SELECT points FROM users WHERE user_id=?",
+    cur = db.cursor()
+    cur.execute(
+        "SELECT points FROM users WHERE user_id = ?",
         (user_id,)
     )
     row = cur.fetchone()
@@ -62,7 +66,7 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     points = row[0] if row else 0
 
     await update.message.reply_text(
-        f"🪙 خاڵەکانت: {points}"
+        f"💰 خاڵەکانت: {points}"
     )
 
 
