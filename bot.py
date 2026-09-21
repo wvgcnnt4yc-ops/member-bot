@@ -2,6 +2,8 @@ import os
 import sqlite3
 import threading
 from flask import Flask
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 
 TOKEN = os.getenv("BOT_TOKEN")
 
